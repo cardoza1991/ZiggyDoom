@@ -4,6 +4,7 @@ const std = @import("std");
 const known_folders = @import("known-folders");
 
 const main = @import("../main.zig");
+const io = @import("../io.zig");
 const argv = @import("../argv.zig");
 const state = @import("../state.zig");
 const ConfigValue = @import("config_value.zig").ConfigValue;
@@ -23,10 +24,7 @@ fn getDefaultConfigDir() ![]const u8 {
 
 pub fn setDir(dir: ?[]const u8) !void {
     config_dir = dir orelse try getDefaultConfigDir();
-    std.io.getStdOut().writer().print(
-        "Using {s} for configuration and saves\n",
-        .{config_dir},
-    ) catch unreachable;
+    io.print("Using {s} for configuration and saves\n", .{config_dir});
     std.fs.cwd().makePath(config_dir) catch |e| switch (e) {
         error.PathAlreadyExists => {},
         else => return e,
@@ -56,10 +54,7 @@ pub fn load() void {
 
     if (argv.checkN("-config", 1)) |i| {
         defaults.filename = argv.get(i + 1);
-        std.io.getStdOut().writer().print(
-            "        default file: {s}\n",
-            .{defaults.filename},
-        ) catch unreachable;
+        io.print("        default file: {s}\n", .{defaults.filename});
     } else defaults.filename = std.fs.path.join(
         main.allocator,
         &.{ config_dir, "default.cfg" },
