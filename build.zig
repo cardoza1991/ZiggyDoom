@@ -1,5 +1,12 @@
 const std = @import("std");
 
+const known_folders_pkg = std.build.Pkg{
+    .name = "known-folders",
+    .source = .{ .path = "deps/known-folders.zig" },
+};
+
+const pkgs = &[_]std.build.Pkg{known_folders_pkg};
+
 pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardReleaseOptions();
@@ -8,6 +15,9 @@ pub fn build(b: *std.build.Builder) void {
     exe.setTarget(target);
     exe.setBuildMode(mode);
     exe.install();
+    for (pkgs) |pkg| {
+        exe.addPackage(pkg);
+    }
 
     const run_cmd = exe.run();
     run_cmd.step.dependOn(b.getInstallStep());
