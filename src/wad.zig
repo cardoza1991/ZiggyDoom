@@ -27,8 +27,26 @@ pub const LumpInfo = struct {
     cache: ?[]u8 = null,
 };
 
+const LumpHashContext = struct {
+    pub fn hash(ctx: @This(), key: []const u8) u32 {
+        _ = ctx;
+        var tmp = main.allocator.alloc(u8, key.len) catch unreachable;
+        defer main.allocator.free(tmp);
+        for (tmp) |*c, i| {
+            c.* = std.ascii.toUpper(key[i]);
+        }
+        return @truncate(u32, std.hash.Wyhash.hash(0, tmp));
+    }
+
+    pub fn eql(ctx: @This(), a: []const u8, b: []const u8, b_index: usize) bool {
+        _ = ctx;
+        _ = b_index;
+        return std.ascii.eqlIgnoreCase(a, b);
+    }
+};
+
 pub var lump_info: std.ArrayList(LumpInfo) = undefined;
-const LumpHash = std.StringArrayHashMap(*LumpInfo);
+const LumpHash = std.ArrayHashMap([]const u8, *LumpInfo, LumpHashContext, true);
 var lump_hash: ?LumpHash = null;
 
 pub fn addFile(path: []const u8) !*File {
@@ -117,5 +135,20 @@ pub fn generateHashTable() !void {
     lump_hash = LumpHash.init(main.allocator);
     for (lump_info.items) |*lump| {
         try lump_hash.?.put(lump.name, lump);
+    }
+}
+
+pub fn checkNumForName(name: []const u8) ?*LumpInfo {
+    if (lump_hash) |lh| {
+        return lh.get(name);
+    } else {
+        var i: usize = lump_info.items.len;
+        while (i > 0) : (i -= 1) {
+            const lump = &lump_info.items[i - 1];
+            if (std.ascii.eqlIgnoreCase(lump.name, name)) {
+                return lump;
+            }
+        }
+        return null;
     }
 }
