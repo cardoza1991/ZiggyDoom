@@ -30,10 +30,10 @@ pub const LumpInfo = struct {
 const LumpHashContext = struct {
     pub fn hash(ctx: @This(), key: []const u8) u32 {
         _ = ctx;
-        var tmp = main.allocator.alloc(u8, key.len) catch unreachable;
+        var tmp = main.allocator.dupe(u8, key) catch unreachable;
         defer main.allocator.free(tmp);
-        for (tmp) |*c, i| {
-            c.* = std.ascii.toUpper(key[i]);
+        for (tmp) |*c| {
+            c.* = std.ascii.toUpper(c.*);
         }
         return @truncate(u32, std.hash.Wyhash.hash(0, tmp));
     }
