@@ -103,6 +103,9 @@ fn readWad(path: []const u8, wf: *File) !void {
                 return error.InvalidWad;
             const name_end = std.mem.indexOfScalar(u8, &namebuf, 0) orelse 8;
             const name = main.allocator.dupe(u8, namebuf[0..name_end]) catch unreachable;
+            for (name) |*c| {
+                c.* = std.ascii.toUpper(c.*);
+            }
             i.pos = @intCast(usize, pos);
             i.size = @intCast(usize, size);
             i.name = name;
@@ -110,7 +113,14 @@ fn readWad(path: []const u8, wf: *File) !void {
     } else {
         // single-lump file, construct "fake" directory
         fileinfo = main.allocator.alloc(FileLump, 1) catch unreachable;
-        fileinfo[0].name = std.fs.path.stem(path);
+        const name = main.allocator.dupe(
+            u8,
+            std.fs.path.stem(path),
+        ) catch unreachable;
+        for (name) |*c| {
+            c.* = std.ascii.toUpper(c.*);
+        }
+        fileinfo[0].name = name;
         fileinfo[0].pos = 0;
         const stat = try f.stat();
         fileinfo[0].size = stat.size;
